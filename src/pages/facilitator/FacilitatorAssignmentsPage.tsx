@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Paperclip } from 'lucide-react';
+import { Paperclip, X } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Eyebrow } from '../../components/ui/Eyebrow';
 import type { AssignmentStudent } from '../../types';
@@ -13,12 +13,71 @@ const normalizeGrade = (value: string) => {
   return String(Math.min(100, Math.max(0, numericValue)));
 };
 
+const AssignmentPreviewModal: React.FC<{ filename: string; onClose: () => void }> = ({
+  filename,
+  onClose,
+}) => {
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-900/60 p-6" onClick={onClose}>
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-2xl bg-white"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+          <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
+            <Paperclip size={14} className="text-slate-400" /> {filename}
+          </span>
+          <button onClick={onClose} className="cursor-pointer">
+            <X size={15} className="text-slate-400 hover:text-slate-600" />
+          </button>
+        </div>
+        <div className="space-y-4 bg-slate-50 p-8">
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <p className="text-sm font-medium text-slate-900">Assignment submission preview</p>
+            <div className="mt-4 space-y-3">
+              <div className="h-3 w-2/3 rounded bg-slate-100" />
+              <div className="h-3 w-full rounded bg-slate-100" />
+              <div className="h-3 w-5/6 rounded bg-slate-100" />
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="h-24 rounded-lg bg-amber-50" />
+                <div className="h-24 rounded-lg bg-slate-100" />
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-xs text-slate-400">
+            Mock preview only. The live version can swap this with a real file viewer later.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AssignmentLink: React.FC<{ filename: string | null; onOpen: (filename: string) => void }> = ({
+  filename,
+  onOpen,
+}) => {
+  if (!filename) {
+    return <span className="text-xs font-medium text-slate-400">No submission</span>;
+  }
+
+  return (
+    <button
+      onClick={() => onOpen(filename)}
+      className="flex items-center gap-1 text-xs text-amber-700 hover:underline"
+    >
+      <Paperclip size={12} /> {filename}
+    </button>
+  );
+};
+
 export const FacilitatorAssignmentsPage: React.FC = () => {
   const [students, setStudents] = useState<AssignmentStudent[]>([
     { name: 'David Adeleke', attachment: 'david_m3.pdf', grade: '' },
     { name: 'Chidi Okafor', attachment: 'chidi_m3.pdf', grade: '84' },
     { name: 'Amaka Obi', attachment: null, grade: '' },
   ]);
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
 
   const total = students.length;
   const submitted = students.filter((s) => s.submitted ?? !!s.attachment).length;
@@ -31,6 +90,8 @@ export const FacilitatorAssignmentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {previewFile && <AssignmentPreviewModal filename={previewFile} onClose={() => setPreviewFile(null)} />}
+
       <div>
         <Eyebrow>Cohort 5 · Module 3</Eyebrow>
         <h1 className="text-2xl font-serif text-slate-900">User Research Synthesis</h1>
@@ -58,7 +119,7 @@ export const FacilitatorAssignmentsPage: React.FC = () => {
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-100">
               <th className="py-2 font-normal">Student</th>
-              <th className="py-2 font-normal">Attachment</th>
+              <th className="py-2 font-normal">Assignment</th>
               <th className="py-2 font-normal">Grade</th>
             </tr>
           </thead>
@@ -67,13 +128,7 @@ export const FacilitatorAssignmentsPage: React.FC = () => {
               <tr key={s.name} className="border-b border-slate-50 last:border-0">
                 <td className="py-2.5">{s.name}</td>
                 <td>
-                  {s.attachment ? (
-                    <span className="flex items-center gap-1 text-xs text-amber-700">
-                      <Paperclip size={12} /> {s.attachment}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-300">—</span>
-                  )}
+                  <AssignmentLink filename={s.attachment} onOpen={setPreviewFile} />
                 </td>
                 <td>
                   <div className="flex items-center gap-2">

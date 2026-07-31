@@ -19,18 +19,35 @@ interface NewCohortForm {
   end_date: string;
 }
 
+interface CohortMaterial {
+  id: string;
+  name: string;
+  kind: 'document' | 'recording';
+  status: 'Published' | 'Auto-attach in 24h';
+}
+
 const EMPTY_FORM: NewCohortForm = { name: '', start_date: '', end_date: '' };
+const DEFAULT_MATERIALS: CohortMaterial[] = [
+  { id: 'material-1', name: 'User Research.pptx', kind: 'document', status: 'Published' },
+  { id: 'material-2', name: 'Session recording', kind: 'recording', status: 'Auto-attach in 24h' },
+];
 
 export const AdminCohortsPage: React.FC = () => {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<NewCohortForm>(EMPTY_FORM);
+  const [materialsByCohort, setMaterialsByCohort] = useState<Record<string, CohortMaterial[]>>({});
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [pendingMaterialName, setPendingMaterialName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const selected = cohorts.find((c) => c.id === selectedId) ?? null;
+  const selectedMaterials = selected
+    ? materialsByCohort[selected.id] ?? DEFAULT_MATERIALS
+    : DEFAULT_MATERIALS;
 
   // ── Fetch cohorts ──────────────────────────────────────────────────────────
   const fetchCohorts = async () => {
@@ -64,7 +81,11 @@ export const AdminCohortsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCohorts();
+    const timeoutId = window.setTimeout(() => {
+      void fetchCohorts();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -111,6 +132,25 @@ export const AdminCohortsPage: React.FC = () => {
     } catch {
       return iso;
     }
+  };
+
+  const uploadMaterial = () => {
+    if (!selected || !pendingMaterialName.trim()) return;
+
+    const currentMaterials = materialsByCohort[selected.id] ?? DEFAULT_MATERIALS;
+    const nextMaterial: CohortMaterial = {
+      id: `material-${Date.now()}`,
+      name: pendingMaterialName.trim(),
+      kind: 'document',
+      status: 'Published',
+    };
+
+    setMaterialsByCohort((current) => ({
+      ...current,
+      [selected.id]: [...currentMaterials, nextMaterial],
+    }));
+    setPendingMaterialName('');
+    setShowUploadForm(false);
   };
 
   return (
@@ -221,16 +261,36 @@ export const AdminCohortsPage: React.FC = () => {
           <Card>
             <Eyebrow>Learning materials — Module 3</Eyebrow>
             <div className="mt-2 space-y-2 text-sm text-slate-700">
-              <div className="flex items-center justify-between">
-                <span>📄 User Research.pptx</span>
-                <Pill tone="emerald">Published</Pill>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>🎥 Session recording</span>
-                <Pill tone="amber">Auto-attach in 24h</Pill>
-              </div>
+              {selectedMaterials.map((material) => (
+                <div key={material.id} className="flex items-center justify-between">
+                  <span>{material.kind === 'document' ? '📄' : '🎥'} {material.name}</span>
+                  <Pill tone={material.status === 'Published' ? 'emerald' : 'amber'}>{material.status}</Pill>
+                </div>
+              ))}
             </div>
-            <button className="mt-3 text-sm text-amber-700 font-medium hover:text-amber-900 transition-colors">
+            {showUploadForm && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/40 p-3">
+                <label className="mb-2 block text-xs font-medium text-slate-600">Upload material</label>
+                <input
+                  type="file"
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setPendingMaterialName(e.target.files?.[0]?.name ?? '')}
+                  className="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+                />
+                {pendingMaterialName && <p className="mt-2 text-xs text-slate-500">Ready to upload: {pendingMaterialName}</p>}
+                <div className="mt-3 flex gap-2">
+                  <PrimaryButton onClick={uploadMaterial} disabled={!pendingMaterialName.trim()}>
+                    Upload
+                  </PrimaryButton>
+                  <GhostButton onClick={() => { setShowUploadForm(false); setPendingMaterialName(''); }}>
+                    Cancel
+                  </GhostButton>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => setShowUploadForm((current) => !current)}
+              className="mt-3 text-sm text-amber-700 font-medium hover:text-amber-900 transition-colors"
+            >
               + Upload material
             </button>
           </Card>
