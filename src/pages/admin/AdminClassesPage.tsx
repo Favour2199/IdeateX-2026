@@ -4,6 +4,16 @@ import { Eyebrow } from '../../components/ui/Eyebrow';
 import { Pill } from '../../components/ui/Pill';
 import { PrimaryButton, GhostButton } from '../../components/ui/Button';
 
+const SESSION_MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short' });
+const SESSION_DAY_FORMATTER = new Intl.DateTimeFormat('en-US', { day: 'numeric' });
+const SESSION_DETAILS_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
 interface LiveClassSession {
   id: number;
   title: string;
@@ -19,9 +29,14 @@ interface NewSessionForm {
 }
 
 const INITIAL_SESSIONS: LiveClassSession[] = [
-  { id: 1, title: 'Synthesis Workshop', date: 'Sat 15 Nov, 10:00am', facilitator: 'Rashidat Raheem' },
-  { id: 2, title: 'Discovery Interviews', date: 'Fri 14 Nov, 6:00pm', facilitator: 'Rashidat Raheem' },
+  { id: 1, title: 'Synthesis Workshop', date: '2026-11-15T10:00', facilitator: 'Rashidat Raheem' },
+  { id: 2, title: 'Discovery Interviews', date: '2026-11-14T18:00', facilitator: 'Rashidat Raheem' },
 ];
+
+const parseSessionDate = (value: string): Date | null => {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
 export const AdminClassesPage: React.FC = () => {
   const [cohort, setCohort] = useState<string>('Cohort 5');
@@ -85,7 +100,8 @@ export const AdminClassesPage: React.FC = () => {
               className="col-span-2 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
             />
             <input
-              placeholder="Date & time (e.g. Sat 22 Nov, 10:00am)"
+              type="datetime-local"
+              aria-label="Session date and time"
               value={form.date}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, date: e.target.value })}
               className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
@@ -116,14 +132,34 @@ export const AdminClassesPage: React.FC = () => {
           {sessions.length === 0 && (
             <p className="text-slate-400">No classes scheduled yet for {cohort}.</p>
           )}
-          {sessions.map((s) => (
-            <div key={s.id} className="flex items-center justify-between">
-              <span>
-                {s.title} — {s.date} · {s.facilitator}
-              </span>
-              <Pill tone="emerald">Reminders scheduled</Pill>
-            </div>
-          ))}
+          {sessions.map((s) => {
+            const sessionDate = parseSessionDate(s.date);
+            const monthLabel = sessionDate ? SESSION_MONTH_FORMATTER.format(sessionDate).toUpperCase() : 'TBD';
+            const dayLabel = sessionDate ? SESSION_DAY_FORMATTER.format(sessionDate) : '--';
+            const detailsLabel = sessionDate ? SESSION_DETAILS_FORMATTER.format(sessionDate) : s.date;
+
+            return (
+              <div
+                key={s.id}
+                className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-16 overflow-hidden rounded-lg border border-slate-200 bg-white text-center">
+                    <p className="border-b border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-semibold tracking-[0.2em] text-slate-500">
+                      {monthLabel}
+                    </p>
+                    <p className="px-2 py-2 text-2xl font-semibold text-slate-900">{dayLabel}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">{s.title}</p>
+                    <p className="text-xs text-slate-500">{detailsLabel}</p>
+                    <p className="text-xs text-slate-500">{s.facilitator}</p>
+                  </div>
+                </div>
+                <Pill tone="emerald">Reminders scheduled</Pill>
+              </div>
+            );
+          })}
         </div>
       </Card>
     </div>
