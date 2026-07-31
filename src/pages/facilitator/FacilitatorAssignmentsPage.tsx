@@ -4,10 +4,19 @@ import { Card } from '../../components/ui/Card';
 import { Eyebrow } from '../../components/ui/Eyebrow';
 import type { AssignmentStudent } from '../../types';
 
+const normalizeGrade = (value: string) => {
+  if (value.trim() === '') return '';
+
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) return '';
+
+  return String(Math.min(100, Math.max(0, numericValue)));
+};
+
 export const FacilitatorAssignmentsPage: React.FC = () => {
   const [students, setStudents] = useState<AssignmentStudent[]>([
     { name: 'David Adeleke', attachment: 'david_m3.pdf', grade: '' },
-    { name: 'Chidi Okafor', attachment: 'chidi_m3.pdf', grade: 'Pass' },
+    { name: 'Chidi Okafor', attachment: 'chidi_m3.pdf', grade: '84' },
     { name: 'Amaka Obi', attachment: null, grade: '' },
   ]);
 
@@ -16,7 +25,8 @@ export const FacilitatorAssignmentsPage: React.FC = () => {
   const notSubmitted = total - submitted;
 
   const setGrade = (name: string, grade: string) => {
-    setStudents((all) => all.map((s) => (s.name === name ? { ...s, grade } : s)));
+    const normalizedGrade = normalizeGrade(grade);
+    setStudents((all) => all.map((s) => (s.name === name ? { ...s, grade: normalizedGrade } : s)));
   };
 
   return (
@@ -66,16 +76,22 @@ export const FacilitatorAssignmentsPage: React.FC = () => {
                   )}
                 </td>
                 <td>
-                  <select
-                    value={s.grade}
-                    onChange={(e) => setGrade(s.name, e.target.value)}
-                    disabled={!s.attachment}
-                    className="border border-slate-200 rounded-md px-2 py-1 text-xs outline-none focus:border-amber-400 disabled:opacity-40"
-                  >
-                    <option value="">— Grade —</option>
-                    <option value="Pass">Pass</option>
-                    <option value="Fail">Fail</option>
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={s.grade}
+                      onChange={(e) => setGrade(s.name, e.target.value)}
+                      disabled={!s.attachment}
+                      aria-label={`${s.name} grade percentage`}
+                      className="w-20 border border-slate-200 rounded-md px-2 py-1 text-xs outline-none focus:border-amber-400 disabled:opacity-40"
+                    />
+                    <span className="text-xs text-slate-500">%</span>
+                  </div>
                 </td>
               </tr>
             ))}
