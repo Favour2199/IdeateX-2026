@@ -24,9 +24,12 @@ interface LiveClassSession {
 interface NewSessionForm {
   title: string;
   date: string;
+  time: string;
   facilitator: string;
   link: string;
 }
+
+const DEFAULT_FACILITATOR = 'Rashidat Raheem';
 
 const INITIAL_SESSIONS: LiveClassSession[] = [
   { id: 1, title: 'Synthesis Workshop', date: '2026-11-15T10:00', facilitator: 'Rashidat Raheem' },
@@ -45,17 +48,18 @@ export const AdminClassesPage: React.FC = () => {
   const [form, setForm] = useState<NewSessionForm>({
     title: '',
     date: '',
-    facilitator: 'Rashidat Raheem',
+    time: '',
+    facilitator: DEFAULT_FACILITATOR,
     link: '',
   });
 
   const addSession = () => {
-    if (!form.title.trim() || !form.date.trim()) return;
+    if (!form.title.trim() || !form.date.trim() || !form.time.trim()) return;
     setSessions((s) => [
       ...s,
-      { id: Date.now(), title: form.title, date: form.date, facilitator: form.facilitator },
+      { id: Date.now(), title: form.title, date: `${form.date}T${form.time}`, facilitator: form.facilitator },
     ]);
-    setForm({ title: '', date: '', facilitator: 'Rashidat Raheem', link: '' });
+    setForm({ title: '', date: '', time: '', facilitator: DEFAULT_FACILITATOR, link: '' });
     setShowForm(false);
   };
 
@@ -99,13 +103,32 @@ export const AdminClassesPage: React.FC = () => {
               onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, title: e.target.value })}
               className="col-span-2 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
             />
-            <input
-              type="datetime-local"
-              aria-label="Session date and time"
-              value={form.date}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, date: e.target.value })}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
-            />
+            <div className="space-y-1">
+              <label htmlFor="session-date" className="text-xs font-medium text-slate-600">
+                Date
+              </label>
+              <input
+                id="session-date"
+                type="date"
+                aria-label="Session date"
+                value={form.date}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, date: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="session-time" className="text-xs font-medium text-slate-600">
+                Time
+              </label>
+              <input
+                id="session-time"
+                type="time"
+                aria-label="Session time"
+                value={form.time}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, time: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
+              />
+            </div>
             <select
               value={form.facilitator}
               onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm({ ...form, facilitator: e.target.value })}
