@@ -107,7 +107,7 @@ export const StudentSchedulePage: React.FC = () => {
                 )}
                 {!excused ? (
                   <button onClick={() => setShowExcuseModal(true)} className="text-xs text-slate-500 underline cursor-pointer">
-                    Submit advance excuse
+                    Submit Emergency leave
                   </button>
                 ) : (
                   <Pill tone="amber">Excuse pending coordinator approval — "{excuseReason}"</Pill>
